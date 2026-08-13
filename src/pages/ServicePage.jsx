@@ -70,7 +70,7 @@ export default function ServicePage() {
           <div className="process-grid">
             {service.process.map((step, i) => (
               <div className="process-grid__item" key={step.title}>
-                <span className="process-grid__num font-mono">{String(i + 1).padStart(2, "0")}</span>
+                
                 <h4>{step.title}</h4>
                 <p>{step.detail}</p>
               </div>
