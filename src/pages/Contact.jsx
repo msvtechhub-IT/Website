@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { Mail, Phone, MapPin, Clock, Send, CheckCircle2 } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, Send, CheckCircle2, AlertCircle } from "lucide-react";
 import { LinkedInIcon, InstagramIcon, FacebookIcon, XIcon, YouTubeIcon } from "../components/SocialIcons.jsx";
 import PageHero from "../components/PageHero.jsx";
 import { services } from "../data/services.js";
+
+const FORMSPREE_ENDPOINT = "https://formspree.io/f/moeawred";
 
 const socials = [
   { label: "LinkedIn", icon: LinkedInIcon, href: "https://linkedin.com" },
@@ -16,18 +18,34 @@ const initialForm = { name: "", email: "", phone: "", service: "", message: "" }
 
 export default function Contact() {
   const [form, setForm] = useState(initialForm);
-  const [submitted, setSubmitted] = useState(false);
+  const [status, setStatus] = useState("idle"); // idle | sending | success | error
 
   const update = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const subject = encodeURIComponent(`Free Consultation Request — ${form.service || "General Inquiry"}`);
-    const body = encodeURIComponent(
-      `Name: ${form.name}\nEmail: ${form.email}\nPhone: ${form.phone}\nService: ${form.service}\n\nMessage:\n${form.message}`
-    );
-    window.location.href = `mailto:msvtechhub@gmail.com?subject=${subject}&body=${body}`;
-    setSubmitted(true);
+    setStatus("sending");
+    try {
+      const res = await fetch(FORMSPREE_ENDPOINT, {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          service: form.service || "Not specified",
+          message: form.message,
+          _subject: `Free Consultation Request — ${form.service || "General Inquiry"}`,
+        }),
+      });
+      if (res.ok) {
+        setStatus("success");
+      } else {
+        setStatus("error");
+      }
+    } catch (err) {
+      setStatus("error");
+    }
   };
 
   return (
@@ -41,16 +59,16 @@ export default function Contact() {
       <section className="section contact-section">
         <div className="shell contact-grid">
           <div className="card contact-form-card">
-            {submitted ? (
+            {status === "success" ? (
               <div className="contact-success">
                 <CheckCircle2 size={40} strokeWidth={1.5} />
-                <h3>Your email app should be open now</h3>
+                <h3>Request received</h3>
                 <p>
-                  Finish sending the message to <strong>msvtechhub@gmail.com</strong> and our team will
-                  reach out within 1–2 business days. Prefer to call? Reach us directly at
+                  Thanks, {form.name.split(" ")[0] || "there"} — your consultation request has been sent to our
+                  team. We typically reply within 1–2 business days. Prefer to call? Reach us directly at
                   <strong> +91 96524 38545</strong>.
                 </p>
-                <button className="btn btn-ghost" onClick={() => { setForm(initialForm); setSubmitted(false); }}>
+                <button className="btn btn-ghost" onClick={() => { setForm(initialForm); setStatus("idle"); }}>
                   Send another message
                 </button>
               </div>
@@ -58,6 +76,16 @@ export default function Contact() {
               <form onSubmit={handleSubmit} className="contact-form">
                 <h2>Request your free consultation</h2>
                 <p className="contact-form__sub">Fields marked * are required.</p>
+
+                {status === "error" && (
+                  <div className="contact-form__error">
+                    <AlertCircle size={18} />
+                    <span>
+                      Something went wrong sending your request. Please try again, or email us directly at{" "}
+                      <a href="mailto:msvtechhub@gmail.com">msvtechhub@gmail.com</a>.
+                    </span>
+                  </div>
+                )}
 
                 <div className="contact-form__row">
                   <label>
@@ -98,8 +126,8 @@ export default function Contact() {
                   />
                 </label>
 
-                <button type="submit" className="btn btn-primary contact-form__submit">
-                  Request Free Consultation <Send size={16} />
+                <button type="submit" className="btn btn-primary contact-form__submit" disabled={status === "sending"}>
+                  {status === "sending" ? "Sending…" : "Request Free Consultation"} <Send size={16} />
                 </button>
               </form>
             )}
