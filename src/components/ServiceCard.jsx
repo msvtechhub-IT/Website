@@ -7,7 +7,7 @@ export default function ServiceCard({ service, index }) {
   return (
     <Link to={`/services/${service.slug}`} className="service-card card">
       <div className="service-card__top">
-        <span className="service-card__index font-mono">{String(index + 1).padStart(2, "0")}</span>
+        
         <span className="service-card__icon">
           <Icon size={22} strokeWidth={1.7} />
         </span>
